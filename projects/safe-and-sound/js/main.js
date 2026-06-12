@@ -16,7 +16,7 @@ const hasScrollTrigger = typeof window.ScrollTrigger !== "undefined";
 const rmMQ = window.matchMedia("(prefers-reduced-motion: reduce)");
 let reducedMotion = rmMQ.matches;
 rmMQ.addEventListener?.("change", e => (reducedMotion = e.matches));
-rmMQ.addListener?.(e => (reducedMotion = e.matches)); 
+rmMQ.addListener?.(e => (reducedMotion = e.matches));
 
 const has = (s) => !!nextPage.querySelector(s);
 
@@ -36,29 +36,29 @@ function initOnceFunctions() {
   initLenis();
   if (onceFunctionsInitialized) return;
   onceFunctionsInitialized = true;
-  
+
   // Runs once on first load
   // if (has('[data-something]')) initSomething();
 }
 
 function initBeforeEnterFunctions(next) {
   nextPage = next || document;
-  
+
   // Runs before the enter animation
   // if (has('[data-something]')) initSomething();
 }
 
 function initAfterEnterFunctions(next) {
   nextPage = next || document;
-  
+
   // Runs after enter animation completes
   // if (has('[data-something]')) initSomething();
-  
-  
-  if(hasLenis){
+
+
+  if (hasLenis) {
     lenis.resize();
   }
-  
+
   if (hasScrollTrigger) {
     ScrollTrigger.refresh();
   }
@@ -86,37 +86,37 @@ function runPageLeaveAnimation(current, next) {
 
   const tl = gsap.timeline({
     onComplete: () => {
-      current.remove(); 
+      current.remove();
     }
   })
-  
+
   CustomEase.create("parallax", "0.7, 0.05, 0.13, 1");
-  
+
   if (reducedMotion) {
     // Immediate swap behavior if user prefers reduced motion
     return tl.set(current, { autoAlpha: 0 });
   }
-  
+
   tl.set(transitionWrap, {
     zIndex: 2
   });
-  
+
   tl.fromTo(transitionDark, {
     autoAlpha: 0
-  },{
+  }, {
     autoAlpha: 0.8,
     duration: 1.2,
     ease: "parallax"
   }, 0);
-  
-  tl.fromTo(current,{
+
+  tl.fromTo(current, {
     y: "0vh"
-  },{
+  }, {
     y: "-25vh",
     duration: 1.2,
     ease: "parallax",
   }, 0);
-  
+
   tl.set(transitionDark, {
     autoAlpha: 0,
   });
@@ -124,9 +124,9 @@ function runPageLeaveAnimation(current, next) {
   return tl;
 }
 
-function runPageEnterAnimation(next){
+function runPageEnterAnimation(next) {
   const tl = gsap.timeline();
-  
+
   if (reducedMotion) {
     // Immediate swap behavior if user prefers reduced motion
     tl.set(next, { autoAlpha: 1 });
@@ -134,13 +134,13 @@ function runPageEnterAnimation(next){
     tl.call(resetPage, [next], "pageReady");
     return new Promise(resolve => tl.call(resolve, null, "pageReady"));
   }
-  
+
   tl.add("startEnter", 0);
-  
+
   tl.set(next, {
     zIndex: 3
   });
-  
+
   tl.fromTo(next, {
     y: "100vh"
   }, {
@@ -171,17 +171,20 @@ barba.hooks.beforeEnter(data => {
     left: 0,
     right: 0,
   });
-  
+
+  // Reinitialize Webflow + IX2 animations for the incoming page
+  reinitWebflow(data);
+
   if (lenis && typeof lenis.stop === "function") {
     lenis.stop();
   }
-  
+
   initBeforeEnterFunctions(data.next.container);
   applyThemeFrom(data.next.container);
 });
 
 barba.hooks.afterLeave(() => {
-  if(hasScrollTrigger){
+  if (hasScrollTrigger) {
     ScrollTrigger.getAll().forEach(trigger => trigger.kill());
   }
 });
@@ -193,15 +196,15 @@ barba.hooks.enter(data => {
 barba.hooks.afterEnter(data => {
   // Run page functions
   initAfterEnterFunctions(data.next.container);
-  
+
   // Settle
-  if(hasLenis){
+  if (hasLenis) {
     lenis.resize();
-    lenis.start();    
+    lenis.start();
   }
-  
-  if(hasScrollTrigger){
-    ScrollTrigger.refresh(); 
+
+  if (hasScrollTrigger) {
+    ScrollTrigger.refresh();
   }
 });
 
@@ -213,7 +216,7 @@ barba.init({
     {
       name: "default",
       sync: true,
-      
+
       // First load
       async once(data) {
         initOnceFunctions();
@@ -254,7 +257,7 @@ const themeConfig = {
 function applyThemeFrom(container) {
   const pageTheme = container?.dataset?.pageTheme || "light";
   const config = themeConfig[pageTheme] || themeConfig.light;
-  
+
   document.body.dataset.pageTheme = pageTheme;
   const transitionEl = document.querySelector('[data-theme-transition]');
   if (transitionEl) {
@@ -287,13 +290,13 @@ function initLenis() {
   gsap.ticker.lagSmoothing(0);
 }
 
-function resetPage(container){
+function resetPage(container) {
   window.scrollTo(0, 0);
   gsap.set(container, { clearProps: "position,top,left,right" });
-  
-  if(hasLenis){
+
+  if (hasLenis) {
     lenis.resize();
-    lenis.start();    
+    lenis.start();
   }
 }
 
@@ -335,7 +338,34 @@ function initBarbaNavUpdate(data) {
   });
 }
 
+function reinitWebflow(data) {
+  if (!window.Webflow || !data?.next?.html) return;
 
+  const parser = new DOMParser();
+  const nextDoc = parser.parseFromString(data.next.html, "text/html");
+
+  const nextPageId = nextDoc.documentElement.getAttribute("data-wf-page");
+  const nextSiteId = nextDoc.documentElement.getAttribute("data-wf-site");
+
+  if (nextPageId) {
+    document.documentElement.setAttribute("data-wf-page", nextPageId);
+  }
+
+  if (nextSiteId) {
+    document.documentElement.setAttribute("data-wf-site", nextSiteId);
+  }
+
+  window.Webflow.destroy();
+  window.Webflow.ready();
+
+  if (window.Webflow.require) {
+    const ix2 = window.Webflow.require("ix2");
+
+    if (ix2 && typeof ix2.init === "function") {
+      ix2.init();
+    }
+  }
+}
 
 // -----------------------------------------
 // YOUR FUNCTIONS GO BELOW HERE

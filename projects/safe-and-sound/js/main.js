@@ -173,7 +173,7 @@ barba.hooks.beforeEnter(data => {
   });
 
   // Reinitialize Webflow + IX2 animations for the incoming page
-  reinitWebflow(data);
+  reinitWebflowPageData(data);
 
   if (lenis && typeof lenis.stop === "function") {
     lenis.stop();
@@ -338,33 +338,23 @@ function initBarbaNavUpdate(data) {
   });
 }
 
-function reinitWebflow(data) {
+function reinitWebflowPageData(data) {
   if (!window.Webflow || !data?.next?.html) return;
 
-  const parser = new DOMParser();
-  const nextDoc = parser.parseFromString(data.next.html, "text/html");
+  const nextDoc = new DOMParser().parseFromString(data.next.html, "text/html");
 
-  const nextPageId = nextDoc.documentElement.getAttribute("data-wf-page");
-  const nextSiteId = nextDoc.documentElement.getAttribute("data-wf-site");
+  const currentHtml = document.documentElement;
+  const nextHtml = nextDoc.documentElement;
 
-  if (nextPageId) {
-    document.documentElement.setAttribute("data-wf-page", nextPageId);
-  }
-
-  if (nextSiteId) {
-    document.documentElement.setAttribute("data-wf-site", nextSiteId);
-  }
+  ["data-wf-page", "data-wf-site"].forEach(attr => {
+    const value = nextHtml.getAttribute(attr);
+    if (value) currentHtml.setAttribute(attr, value);
+  });
 
   window.Webflow.destroy();
   window.Webflow.ready();
 
-  if (window.Webflow.require) {
-    const ix2 = window.Webflow.require("ix2");
-
-    if (ix2 && typeof ix2.init === "function") {
-      ix2.init();
-    }
-  }
+  window.Webflow.require?.("ix2")?.init?.();
 }
 
 // -----------------------------------------

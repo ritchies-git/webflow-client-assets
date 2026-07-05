@@ -172,8 +172,6 @@ barba.hooks.beforeEnter(data => {
     right: 0,
   });
 
-  // Reinitialize Webflow + IX2 animations for the incoming page
-  reinitWebflowPageData(data);
 
   if (lenis && typeof lenis.stop === "function") {
     lenis.stop();
@@ -194,6 +192,9 @@ barba.hooks.enter(data => {
 })
 
 barba.hooks.afterEnter(data => {
+  // Reinitialize Webflow + IX2 animations for the incoming page
+  reinitWebflowPageData(data);
+
   // Run page functions
   initAfterEnterFunctions(data.next.container);
 

@@ -488,3 +488,45 @@ function initLayoutTextReveal(container = document) {
     });
   });
 }
+
+function updateChicagoTime() {
+  const timeElements = document.querySelectorAll("[data-chicago-time]");
+  const tzElements = document.querySelectorAll("[data-chicago-timezone]");
+
+  if (!timeElements.length && !tzElements.length) return;
+
+  const now = new Date();
+
+  const chicagoTime = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Chicago",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true
+  }).format(now);
+
+  const chicagoTimeZone = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Chicago",
+    timeZoneName: "short"
+  })
+    .formatToParts(now)
+    .find(part => part.type === "timeZoneName")?.value || "CT";
+
+  timeElements.forEach(el => {
+    el.textContent = chicagoTime;
+  });
+
+  tzElements.forEach(el => {
+    el.textContent = chicagoTimeZone;
+  });
+}
+
+function initChicagoTime() {
+  updateChicagoTime();
+
+  // Prevent multiple intervals from being created
+  if (window.chicagoTimeInterval) return;
+
+  window.chicagoTimeInterval = setInterval(() => {
+    updateChicagoTime();
+  }, 1000);
+}

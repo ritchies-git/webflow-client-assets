@@ -45,6 +45,8 @@ function initOnceFunctions() {
   if (onceFunctionsInitialized) return;
   onceFunctionsInitialized = true;
 
+  initChicagoTime();
+
   // Runs once on first load
   // if (has("[data-something]")) initSomething();
 }
@@ -64,6 +66,7 @@ function initAfterEnterFunctions(next) {
 
   // Runs after enter animation completes
   initLayoutTextReveal(nextPage);
+  initChicagoTime();
 
   if (hasLenis && lenis) {
     lenis.resize();
